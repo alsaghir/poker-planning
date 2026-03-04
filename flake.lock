@@ -5,14 +5,17 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1772546105,
-        "narHash": "sha256-HnayuTctx0dnqSAx2roYo5zKovr5BbeanvQEdtO/e7I=",
-        "path": "/home/ahmed/Projects/devtools",
-        "type": "path"
+        "lastModified": 1772650869,
+        "narHash": "sha256-Ds5ghyrUp8DDWhcKW/S9vLR6jaNIumcfU6Zl9Pszels=",
+        "owner": "alsaghir",
+        "repo": "nix-devtools",
+        "rev": "b352c7f0177e06d86bc6e313ffebe6c43b448f1f",
+        "type": "github"
       },
       "original": {
-        "path": "/home/ahmed/Projects/devtools",
-        "type": "path"
+        "owner": "alsaghir",
+        "repo": "nix-devtools",
+        "type": "github"
       }
     },
     "nixpkgs": {

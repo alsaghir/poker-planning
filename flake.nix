@@ -1,7 +1,7 @@
 {
   description = "Kotlin Multiplatform Project";
 
-  inputs.devtools.url = "path:/home/ahmed/Projects/devtools";
+  inputs.devtools.url = "github:alsaghir/nix-devtools";
   inputs.nixpkgs.follows = "devtools/nixpkgs";
 
   outputs = { self, nixpkgs, devtools, ... }:

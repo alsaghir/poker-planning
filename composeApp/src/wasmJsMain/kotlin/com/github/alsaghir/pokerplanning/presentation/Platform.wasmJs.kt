@@ -1,4 +1,4 @@
-package com.github.alsaghir.pokerplanning
+package com.github.alsaghir.pokerplanning.presentation
 
 class WasmPlatform: Platform {
     override val name: String = "Web with Kotlin/Wasm"

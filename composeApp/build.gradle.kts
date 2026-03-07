@@ -53,6 +53,8 @@ kotlin {
 
             implementation(libs.kermit.logging)
 
+            implementation(libs.materialKolor)
+
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

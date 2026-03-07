@@ -1,4 +1,4 @@
-package com.github.alsaghir.pokerplanning
+package com.github.alsaghir.pokerplanning.presentation
 
 class JsPlatform: Platform {
     override val name: String = "Web with Kotlin/JS"

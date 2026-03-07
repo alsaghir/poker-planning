@@ -1,4 +1,4 @@
-package com.github.alsaghir.pokerplanning
+package com.github.alsaghir.pokerplanning.presentation
 
 class Greeting {
     private val platform = getPlatform()

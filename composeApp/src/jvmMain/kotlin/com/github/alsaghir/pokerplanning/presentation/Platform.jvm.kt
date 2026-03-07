@@ -1,4 +1,4 @@
-package com.github.alsaghir.pokerplanning
+package com.github.alsaghir.pokerplanning.presentation
 
 class JVMPlatform: Platform {
     override val name: String = "Java ${System.getProperty("java.version")}"

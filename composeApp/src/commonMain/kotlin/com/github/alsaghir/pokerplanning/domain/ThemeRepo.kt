@@ -5,17 +5,21 @@ import co.touchlab.kermit.Logger
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 class ThemeRepo(
     private val storage: Storage,
-    private val defaultColor: Color,
+    defaultColor: Color,
     private val json: Json = Json {
         prettyPrint = true
         isLenient = true
@@ -27,25 +31,42 @@ class ThemeRepo(
 
     private val defaultTheme = ThemeDto.default(defaultColor)
 
-    private val _themeStateFlow = MutableStateFlow(loadFromStorage())
+    // For async operations. SupervisorJob allows child coroutines to fail independently without cancelling the entire scope.
+    private val repoScope = CoroutineScope(dispatcher + SupervisorJob())
+
+    private val _themeState = MutableStateFlow<DataState<ThemeDto>>(DataState.Loading)
+    val themeState: StateFlow<DataState<ThemeDto>> = _themeState.asStateFlow()
+
+    init {
+        repoScope.launch {
+            _themeState.value = try {
+                DataState.Success(loadFromStorage())
+            } catch (e: Exception) {
+                DataState.Error(e)
+            }
+        }
+    }
+
+    fun close() {
+        repoScope.cancel()
+    }
 
     suspend fun saveTheme(theme: ThemeDto): Result<Unit> = withContext(dispatcher) {
         try {
             saveToStorage(theme)
-            _themeStateFlow.value = theme
+            _themeState.value = DataState.Success(theme)
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            _themeState.value = DataState.Error(e)
             Result.failure(e)
         }
     }
 
-    fun observeTheme(): StateFlow<ThemeDto> = _themeStateFlow.asStateFlow()
 
     private fun loadFromStorage(): ThemeDto {
         val savedString = storage.getString(themeKey) ?: return defaultTheme
-
         return try {
             json.decodeFromString<ThemeDto>(savedString)
         } catch (e: Exception) {
@@ -55,10 +76,8 @@ class ThemeRepo(
     }
 
     private fun saveToStorage(theme: ThemeDto) {
-
         val serialized = json.encodeToString(theme)
         storage.putString(themeKey, serialized)
-
     }
 }
 
@@ -88,6 +107,8 @@ enum class SerializablePaletteStyle {
     }
 }
 
+// Always handle changing of modes in that order
+// DSL = DARK > SYSTEM > LIGHT circuling back to DARK from LIGHT and so on
 @Serializable
 enum class ThemeMode {
     DARK, LIGHT, SYSTEM
@@ -125,7 +146,7 @@ data class ThemeDto(
             return fromColor(
                 color = defaultColor,
                 paletteStyle = PaletteStyle.Expressive,
-                mode = ThemeMode.SYSTEM
+                mode = ThemeMode.DARK
             )
         }
     }

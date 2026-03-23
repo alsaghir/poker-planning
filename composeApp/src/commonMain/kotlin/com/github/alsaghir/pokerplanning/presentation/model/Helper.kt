@@ -2,6 +2,7 @@ package com.github.alsaghir.pokerplanning.presentation.model
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,6 +81,7 @@ fun <E> ViewModel.launchSafe(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            Logger.e("Error launch ${e.message ?: errorMessage}", e)
             eventFlow.emit(createErrorEvent(e.message ?: errorMessage))
         }
     }
@@ -90,3 +92,8 @@ fun <E> ViewModel.launchSafe(
  * Shared between all ViewModels to ensure consistent handling.
  */
 enum class MessageType { Info, Warning, Error, Success }
+
+data class MessageEvent(
+    val message: String,
+    val type: MessageType = MessageType.Error
+)

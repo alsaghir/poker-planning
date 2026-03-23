@@ -1,14 +1,14 @@
 {
   description = "Kotlin Multiplatform Project";
 
-  inputs.devtools.url = "github:alsaghir/nix-devtools";
-  inputs.nixpkgs.follows = "devtools/nixpkgs";
+  inputs.nix-config.url = "github:alsaghir/nix-config";
+  inputs.nixpkgs.follows = "nix-config/nixpkgs";
 
-  outputs = { self, nixpkgs, devtools, ... }:
+  outputs = { self, nixpkgs, nix-config, ... }:
     let
       system = "x86_64-linux";
     in
     {
-      devShells.${system}.default = devtools.devShells.${system}.kotlin;
+      devShells.${system}.default = nix-config.devShells.${system}.kotlin;
     };
 }

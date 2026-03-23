@@ -1,34 +1,52 @@
 {
   "nodes": {
-    "devtools": {
+    "nix-config": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nix-flatpak": "nix-flatpak",
+        "nixpkgs": "nixpkgs",
+        "sops-nix": "sops-nix"
       },
       "locked": {
-        "lastModified": 1772650869,
-        "narHash": "sha256-Ds5ghyrUp8DDWhcKW/S9vLR6jaNIumcfU6Zl9Pszels=",
+        "lastModified": 1774238873,
+        "narHash": "sha256-HqqYC7PqRCDeoGo6lQR5gwBoO01vw6ljGluQgkQ5v5g=",
         "owner": "alsaghir",
-        "repo": "nix-devtools",
-        "rev": "b352c7f0177e06d86bc6e313ffebe6c43b448f1f",
+        "repo": "nix-config",
+        "rev": "aecdd86a93e8f6c70d029ad80f5ba8030d066396",
         "type": "github"
       },
       "original": {
         "owner": "alsaghir",
-        "repo": "nix-devtools",
+        "repo": "nix-config",
+        "type": "github"
+      }
+    },
+    "nix-flatpak": {
+      "locked": {
+        "lastModified": 1767983141,
+        "narHash": "sha256-7ZCulYUD9RmJIDULTRkGLSW1faMpDlPKcbWJLYHoXcs=",
+        "owner": "gmodena",
+        "repo": "nix-flatpak",
+        "rev": "440818969ac2cbd77bfe025e884d0aa528991374",
+        "type": "github"
+      },
+      "original": {
+        "owner": "gmodena",
+        "ref": "latest",
+        "repo": "nix-flatpak",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1772433332,
-        "narHash": "sha256-izhTDFKsg6KeVBxJS9EblGeQ8y+O8eCa6RcW874vxEc=",
-        "owner": "nixos",
+        "lastModified": 1773821835,
+        "narHash": "sha256-TJ3lSQtW0E2JrznGVm8hOQGVpXjJyXY2guAxku2O9A4=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "cf59864ef8aa2e178cccedbe2c178185b0365705",
+        "rev": "b40629efe5d6ec48dd1efba650c797ddbd39ace0",
         "type": "github"
       },
       "original": {
-        "owner": "nixos",
+        "owner": "NixOS",
         "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
@@ -36,11 +54,32 @@
     },
     "root": {
       "inputs": {
-        "devtools": "devtools",
+        "nix-config": "nix-config",
         "nixpkgs": [
-          "devtools",
+          "nix-config",
           "nixpkgs"
         ]
+      }
+    },
+    "sops-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nix-config",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1774154798,
+        "narHash": "sha256-zsTuloDSdKf+PrI1MsWx5z/cyGEJ8P3eERtAfdP8Bmg=",
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "rev": "3e0d543e6ba6c0c48117a81614e90c6d8c425170",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "sops-nix",
+        "type": "github"
       }
     }
   },

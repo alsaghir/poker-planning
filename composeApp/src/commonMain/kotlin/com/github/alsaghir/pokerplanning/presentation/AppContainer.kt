@@ -6,7 +6,7 @@ import com.github.alsaghir.pokerplanning.domain.createPlatformStorage
 import com.github.alsaghir.pokerplanning.infra.AppConfig
 import kotlinx.serialization.json.Json
 
-class AppContainer(private val defaultColor: Color) {
+class AppContainer{
 
     val appConfig by lazy { AppConfig.fromEnvironment("dev") }
 
@@ -18,11 +18,9 @@ class AppContainer(private val defaultColor: Color) {
         }
     }
     val storage by lazy { createPlatformStorage() }
-     val themeRepo by lazy { ThemeRepo(storage, defaultColor, json) }
+    val themeRepo by lazy { ThemeRepo(storage, Color(appConfig.defaultSeedColorValue), json) }
 
     fun close() {
-
+        themeRepo.close()
     }
-
 }
-

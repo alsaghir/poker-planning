@@ -7,7 +7,7 @@ class JvmStorage : Storage {
 
     override fun getString(key: String): String? = prefs.get(key, null)
 
-    override fun putString(key: String, value: String) {
+    override suspend fun putString(key: String, value: String) {
         prefs.put(key, value)
         prefs.flush()
     }

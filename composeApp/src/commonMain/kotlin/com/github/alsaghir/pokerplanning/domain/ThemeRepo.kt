@@ -1,81 +1,48 @@
 package com.github.alsaghir.pokerplanning.domain
 
 import androidx.compose.ui.graphics.Color
-import co.touchlab.kermit.Logger
 import com.materialkolor.PaletteStyle
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-class ThemeRepo(
+interface ThemeRepo {
+    val themeState: StateFlow<ThemeDto>
+    suspend fun loadTheme()
+    suspend fun saveTheme(theme: ThemeDto)
+}
+
+class ThemeRepoImpl(
     private val storage: Storage,
     defaultColor: Color,
     private val json: Json = Json {
         prettyPrint = true
         isLenient = true
         ignoreUnknownKeys = true
-    },
-    private val dispatcher: CoroutineDispatcher = Dispatchers.Default
-) {
+    }
+) : ThemeRepo {
     private val themeKey = "theme"
-
     private val defaultTheme = ThemeDto.default(defaultColor)
 
-    // For async operations. SupervisorJob allows child coroutines to fail independently without cancelling the entire scope.
-    private val repoScope = CoroutineScope(dispatcher + SupervisorJob())
+    private val _themeState = MutableStateFlow<ThemeDto>(defaultTheme)
+    override val themeState: StateFlow<ThemeDto> = _themeState.asStateFlow()
 
-    private val _themeState = MutableStateFlow<DataState<ThemeDto>>(DataState.Loading)
-    val themeState: StateFlow<DataState<ThemeDto>> = _themeState.asStateFlow()
+    // Called by the ViewModel to initiate the async fetch
+    override suspend fun loadTheme() {
+        val savedString = storage.getString(themeKey) ?: return
+        _themeState.value = json.decodeFromString<ThemeDto>(savedString)
 
-    init {
-        repoScope.launch {
-            _themeState.value = try {
-                DataState.Success(loadFromStorage())
-            } catch (e: Exception) {
-                DataState.Error(e)
-            }
-        }
     }
 
-    fun close() {
-        repoScope.cancel()
-    }
-
-    suspend fun saveTheme(theme: ThemeDto): Result<Unit> = withContext(dispatcher) {
-        try {
-            saveToStorage(theme)
-            _themeState.value = DataState.Success(theme)
-            Result.success(Unit)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _themeState.value = DataState.Error(e)
-            Result.failure(e)
-        }
+    override suspend fun saveTheme(theme: ThemeDto) {
+        _themeState.value = theme
+        saveToStorage(theme)
     }
 
 
-    private fun loadFromStorage(): ThemeDto {
-        val savedString = storage.getString(themeKey) ?: return defaultTheme
-        return try {
-            json.decodeFromString<ThemeDto>(savedString)
-        } catch (e: Exception) {
-            Logger.e("Error loading theme from storage", e)
-            defaultTheme
-        }
-    }
-
-    private fun saveToStorage(theme: ThemeDto) {
+    private suspend fun saveToStorage(theme: ThemeDto) {
         val serialized = json.encodeToString(theme)
         storage.putString(themeKey, serialized)
     }

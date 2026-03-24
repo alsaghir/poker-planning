@@ -2,7 +2,7 @@ package com.github.alsaghir.pokerplanning.domain
 
 interface Storage {
     fun getString(key: String): String?
-    fun putString(key: String, value: String)
+    suspend fun putString(key: String, value: String)
     fun remove(key: String)
 }
 

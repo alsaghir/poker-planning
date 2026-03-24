@@ -7,7 +7,7 @@ class WebStorage : Storage {
 
     override fun getString(key: String): String? = localStorage.getItem(key)
 
-    override fun putString(key: String, value: String) {
+    override suspend fun putString(key: String, value: String) {
         localStorage.setItem(key, value)
     }
 

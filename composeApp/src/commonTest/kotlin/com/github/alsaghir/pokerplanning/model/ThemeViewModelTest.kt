@@ -19,6 +19,7 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -59,31 +60,25 @@ class ThemeViewModelTest {
 
 
     @Test
-    fun `themeState initial value is Loading before init completes`() = runTest {
-        // viewModel just constructed — init{} scheduled but not yet run
-        viewModel.themeState.test {
-            assertIs<DataState.Loading>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
+    fun `themeState emits Loading then Success on init`() = runTest {
+        // Create inside runTest — init{} is scheduled but NOT yet executed
+        val localViewModel = ThemeViewModel(fakeRepo)
 
-    @Test
-    fun `themeState emits Success after init loadTheme completes`() = runTest {
-        viewModel.themeState.test {
-            assertIs<DataState.Loading>(awaitItem())
-            advanceUntilIdle() // runs init{} -> loadTheme()
-            assertIs<DataState.Success<ThemeDto>>(awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
+        // Scheduler hasn't ticked yet — still Loading
+        assertIs<DataState.Loading>(localViewModel.themeState.value)
+
+        // Now run init{}
+        advanceUntilIdle()
+
+        // Now it's Success
+        assertIs<DataState.Success<ThemeDto>>(localViewModel.themeState.value)
     }
 
     @Test
     fun `themeState Success contains repo default theme after init`() = runTest {
-        val expectedTheme = fakeRepo.themeState.value
+        val expectedTheme = fakeRepo.getTheme()
 
         viewModel.themeState.test {
-            awaitItem() // Loading
-            advanceUntilIdle()
             val success = awaitItem()
             assertIs<DataState.Success<ThemeDto>>(success)
             assertEquals(expectedTheme, success.data)
@@ -94,7 +89,7 @@ class ThemeViewModelTest {
 
     @Test
     fun `loadTheme failure emits ShowMessage event`() = runTest {
-        fakeRepo.loadThemeShouldThrow = true
+        fakeRepo.getThemeShouldThrow = true
         val failingViewModel = ThemeViewModel(fakeRepo)
 
         turbineScope {
@@ -107,9 +102,8 @@ class ThemeViewModelTest {
             advanceUntilIdle() // runs init -> loadTheme -> throws -> launchSafe catches -> emits
 
             val event = eventTurbine.awaitItem()
-            assertIs<ThemeUiEvent.ShowMessage>(event)
-            assertTrue(event.event.message.contains("Simulated loadTheme failure"))
-
+            assertIs<UiEvent.ShowMessage>(event)
+            assertContains(event.event.message, "Simulated theme loading failure")
             stateTurbine.cancelAndIgnoreRemainingEvents()
             eventTurbine.cancelAndIgnoreRemainingEvents()
         }
@@ -118,12 +112,9 @@ class ThemeViewModelTest {
     @Test
     fun `setTheme updates themeState to new theme`() = runTest {
         viewModel.themeState.test {
-            awaitItem() // Loading
-            advanceUntilIdle() // init completes
-            awaitItem() // Success(defaultTheme)
+            awaitItem()
 
             viewModel.setTheme(redTheme)
-            advanceUntilIdle()
 
             val updated = awaitItem()
             assertIs<DataState.Success<ThemeDto>>(updated)
@@ -134,25 +125,27 @@ class ThemeViewModelTest {
 
     @Test
     fun `setTheme called multiple times emits each theme in order`() = runTest {
+        testDispatcher.scheduler.advanceUntilIdle()
+
         viewModel.themeState.test {
-            awaitItem() // Loading
-            advanceUntilIdle()
-            awaitItem() // Success(defaultTheme)
+            val initial = awaitItem()
+            assertIs<DataState.Success<ThemeDto>>(initial)
 
             viewModel.setTheme(redTheme)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
             val first = awaitItem()
             assertIs<DataState.Success<ThemeDto>>(first)
             assertEquals(redTheme, first.data)
 
             viewModel.setTheme(blueTheme)
-            advanceUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
             val second = awaitItem()
             assertIs<DataState.Success<ThemeDto>>(second)
             assertEquals(blueTheme, second.data)
 
             cancelAndIgnoreRemainingEvents()
         }
+
     }
 
     @Test
@@ -171,7 +164,6 @@ class ThemeViewModelTest {
             val stateTurbine = viewModel.themeState.testIn(backgroundScope)
             val eventTurbine = viewModel.events.testIn(backgroundScope)
 
-            assertIs<DataState.Loading>(stateTurbine.awaitItem())
             advanceUntilIdle()
             val successItem = stateTurbine.awaitItem()
             assertIs<DataState.Success<ThemeDto>>(successItem)
@@ -181,7 +173,7 @@ class ThemeViewModelTest {
             advanceUntilIdle()
 
             val event = eventTurbine.awaitItem()
-            assertIs<ThemeUiEvent.ShowMessage>(event)
+            assertIs<UiEvent.ShowMessage>(event)
             assertTrue(event.event.message.contains("Simulated saveTheme failure"))
 
             // state must not have changed after the failed save
@@ -193,12 +185,9 @@ class ThemeViewModelTest {
         }
     }
 
-
     @Test
     fun `themeState replays last value to new subscriber`() = runTest {
         viewModel.themeState.test {
-            awaitItem() // Loading
-            advanceUntilIdle()
             awaitItem() // Success
             cancelAndIgnoreRemainingEvents()
         }

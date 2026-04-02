@@ -2,10 +2,10 @@ package com.github.alsaghir.pokerplanning.domain
 
 import FakeStorage
 import androidx.compose.ui.graphics.Color
-import app.cash.turbine.test
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,6 +17,7 @@ class ThemeRepoTest {
     private lateinit var fakeStorage: FakeStorage
     private lateinit var themeRepo: ThemeRepo
     private val defaultColor = Color(0xFFFF0000)
+    private val themeKey = "theme"
 
     @BeforeTest
     fun setup() {
@@ -27,96 +28,67 @@ class ThemeRepoTest {
         )
     }
 
-    @Test
-    fun `initial state should emit default theme`() = runTest {
-        themeRepo.themeState.test {
-            val initialState = awaitItem()
-
-            assertEquals(defaultColor.value, initialState.colorValue)
-            assertEquals(ThemeMode.DARK, initialState.mode)
-            assertEquals(SerializablePaletteStyle.EXPRESSIVE, initialState.paletteStyle)
-
-            cancelAndIgnoreRemainingEvents()
-        }
+    @AfterTest
+    fun teardown() {
+        fakeStorage.clear()
     }
 
 
     @Test
-    fun `saveTheme should emit new state and persist via Storage interface`() = runTest {
+    fun `getTheme with empty storage returns default theme`() = runTest {
+        val theme = themeRepo.getTheme()
+
+        assertEquals(ThemeDto.default(defaultColor), theme)
+    }
+
+
+    @Test
+    fun `saveTheme persists serialized theme via Storage`() = runTest {
         val newTheme = ThemeDto.fromColor(
             color = Color(0xFF00FF00),
             paletteStyle = PaletteStyle.TonalSpot,
             mode = ThemeMode.LIGHT
         )
 
-        themeRepo.themeState.test {
-            // The first emission is always the default state due to StateFlow
-            awaitItem()
+        themeRepo.saveTheme(newTheme)
 
-            // Act: Save a new theme
-            themeRepo.saveTheme(newTheme)
+        val savedJson = fakeStorage.getString(themeKey)
+        assertNotNull(savedJson)
 
-            // Assert StateFlow emitted the new theme
-            assertEquals(newTheme, awaitItem())
-
-            // Assert storage updated using the proper public interface method
-            val savedJson = fakeStorage.getString("theme")
-            assertNotNull(savedJson)
-
-            val decodedTheme = Json.decodeFromString<ThemeDto>(savedJson)
-            assertEquals(newTheme, decodedTheme)
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        val decodedTheme = Json.decodeFromString<ThemeDto>(savedJson)
+        assertEquals(newTheme, decodedTheme)
     }
 
     @Test
-    fun `loadTheme with existing data should emit stored theme`() = runTest {
-        // Arrange
+    fun `getTheme with existing storage returns stored theme`() = runTest {
         val storedTheme = ThemeDto.fromColor(
             color = Color(0xFF0000FF),
             paletteStyle = PaletteStyle.Vibrant,
             mode = ThemeMode.SYSTEM
         )
-        fakeStorage.putString("theme", Json.encodeToString(storedTheme))
+        fakeStorage.putString(themeKey, Json.encodeToString(storedTheme))
 
-        themeRepo.themeState.test {
-            // Skip the initial default state
-            awaitItem()
+        val result = themeRepo.getTheme()
 
-            // Act
-            themeRepo.loadTheme()
-
-            // Assert Flow emits the stored state
-            assertEquals(storedTheme, awaitItem())
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        assertEquals(storedTheme, result)
     }
 
     @Test
-    fun `loadTheme with empty storage should not emit new items`() = runTest {
-        // Arrange
-        fakeStorage.clear()
+    fun `saveTheme then getTheme returns saved theme`() = runTest {
+        val theme = ThemeDto(
+            colorValue = Color(0xFF111111).value,
+            paletteStyle = SerializablePaletteStyle.NEUTRAL,
+            mode = ThemeMode.SYSTEM
+        )
 
-        themeRepo.themeState.test {
-            val initialState = awaitItem() // Initial default theme
+        themeRepo.saveTheme(theme)
 
-            // Act
-            themeRepo.loadTheme()
-
-            // Assert no further state changes occurred because storage is empty
-            expectNoEvents()
-
-            // Verify state is still default
-            assertEquals(defaultColor.value, initialState.colorValue)
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        val loaded = themeRepo.getTheme()
+        assertEquals(theme, loaded)
     }
 
     @Test
-    fun `loadTheme called multiple times emits each persisted value in order`() = runTest {
+    fun `getTheme reflects latest value stored`() = runTest {
         val firstTheme = ThemeDto(
             colorValue = Color(0xFF111111).value,
             paletteStyle = SerializablePaletteStyle.NEUTRAL,
@@ -128,25 +100,12 @@ class ThemeRepoTest {
             mode = ThemeMode.DARK
         )
 
-        themeRepo.themeState.test {
-            val json = Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            }
-            val defaultTheme = ThemeDto.default(defaultColor)
+        themeRepo.saveTheme(firstTheme)
+        assertEquals(firstTheme, themeRepo.getTheme())
 
-            assertEquals(defaultTheme, awaitItem())
-
-            fakeStorage.putString("theme", json.encodeToString(firstTheme))
-            themeRepo.loadTheme()
-            assertEquals(firstTheme, awaitItem())
-
-            fakeStorage.putString("theme", json.encodeToString(secondTheme))
-            themeRepo.loadTheme()
-            assertEquals(secondTheme, awaitItem())
-
-            cancelAndIgnoreRemainingEvents()
-        }
+        themeRepo.saveTheme(secondTheme)
+        assertEquals(secondTheme, themeRepo.getTheme())
     }
+
+
 }

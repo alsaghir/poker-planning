@@ -3,6 +3,7 @@ package com.github.alsaghir.pokerplanning.presentation.model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.github.alsaghir.pokerplanning.domain.DataState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,6 +88,27 @@ fun <E> ViewModel.launchSafe(
     }
 }
 
+fun <T, E> ViewModel.launchSafe(
+    eventFlow: MutableSharedFlow<E>,
+    stateFlow: MutableStateFlow<DataState<T>>,
+    createErrorEvent: (String) -> E,
+    errorMessage: String = "Operation failed",
+    block: suspend () -> Unit
+) {
+    viewModelScope.launch {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Logger.e("Error launch ${e.message ?: errorMessage}", e)
+            stateFlow.value = DataState.Error(e)
+            eventFlow.emit(createErrorEvent(e.message ?: errorMessage))
+        }
+    }
+}
+
+
 /**
  * Severity level for user-facing messages.
  * Shared between all ViewModels to ensure consistent handling.
@@ -97,3 +119,8 @@ data class MessageEvent(
     val message: String,
     val type: MessageType = MessageType.Error
 )
+
+sealed interface UiEvent {
+
+    data class ShowMessage(val event: MessageEvent) : UiEvent
+}

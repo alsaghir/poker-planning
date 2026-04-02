@@ -35,8 +35,8 @@ import com.github.alsaghir.pokerplanning.domain.ThemeMode
 import com.github.alsaghir.pokerplanning.presentation.component.ErrorIcon
 import com.github.alsaghir.pokerplanning.presentation.component.LoadingIndicator
 import com.github.alsaghir.pokerplanning.presentation.component.TopBar
-import com.github.alsaghir.pokerplanning.presentation.model.ThemeUiEvent
 import com.github.alsaghir.pokerplanning.presentation.model.ThemeViewModel
+import com.github.alsaghir.pokerplanning.presentation.model.UiEvent
 import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.dynamiccolor.ColorSpec
 import org.jetbrains.compose.resources.painterResource
@@ -87,7 +87,7 @@ fun App() {
             LaunchedEffect(themeViewModel) {
                 themeViewModel.events.collect { event ->
                     when (event) {
-                        is ThemeUiEvent.ShowMessage -> snackbarHostState.showSnackbar(
+                        is UiEvent.ShowMessage -> snackbarHostState.showSnackbar(
                             message = event.event.message,
                             duration = SnackbarDuration.Short
                         )

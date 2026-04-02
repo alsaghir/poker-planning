@@ -2,15 +2,11 @@ package com.github.alsaghir.pokerplanning.domain
 
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 interface ThemeRepo {
-    val themeState: StateFlow<ThemeDto>
-    suspend fun loadTheme()
+    suspend fun getTheme(): ThemeDto
     suspend fun saveTheme(theme: ThemeDto)
 }
 
@@ -26,18 +22,18 @@ class ThemeRepoImpl(
     private val themeKey = "theme"
     private val defaultTheme = ThemeDto.default(defaultColor)
 
-    private val _themeState = MutableStateFlow<ThemeDto>(defaultTheme)
-    override val themeState: StateFlow<ThemeDto> = _themeState.asStateFlow()
-
     // Called by the ViewModel to initiate the async fetch
-    override suspend fun loadTheme() {
-        val savedString = storage.getString(themeKey) ?: return
-        _themeState.value = json.decodeFromString<ThemeDto>(savedString)
+    override suspend fun getTheme(): ThemeDto {
+        val savedString = storage.getString(themeKey)
+        return if (savedString != null) {
+            json.decodeFromString<ThemeDto>(savedString)
+        } else {
+            defaultTheme
+        }
 
     }
 
     override suspend fun saveTheme(theme: ThemeDto) {
-        _themeState.value = theme
         saveToStorage(theme)
     }
 

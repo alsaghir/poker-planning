@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
@@ -84,7 +86,6 @@ kotlin {
     }
 }
 
-
 compose.desktop {
     application {
         mainClass = "com.github.alsaghir.pokerplanning.MainKt"
@@ -95,4 +96,37 @@ compose.desktop {
             packageVersion = "1.0.0"
         }
     }
+}
+
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        events(
+            TestLogEvent.PASSED,
+            TestLogEvent.SKIPPED,
+            TestLogEvent.FAILED
+        )
+        exceptionFormat = TestExceptionFormat.FULL
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+
+    addTestListener(object : TestListener {
+        override fun beforeSuite(suite: TestDescriptor) = Unit
+        override fun beforeTest(testDescriptor: TestDescriptor) = Unit
+        override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) = Unit
+
+        override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+            if (suite.parent == null) {
+                println(
+                    "Test summary for $path: " +
+                            "${result.testCount} total, " +
+                            "${result.successfulTestCount} passed, " +
+                            "${result.failedTestCount} failed, " +
+                            "${result.skippedTestCount} skipped"
+                )
+            }
+        }
+    })
 }

@@ -11,7 +11,7 @@ class WebStorage : Storage {
         localStorage.setItem(key, value)
     }
 
-    override fun remove(key: String) {
+    override suspend fun remove(key: String) {
         localStorage.removeItem(key)
     }
 }

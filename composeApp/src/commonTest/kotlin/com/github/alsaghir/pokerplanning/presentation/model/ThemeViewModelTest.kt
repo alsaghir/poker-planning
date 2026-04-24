@@ -1,4 +1,3 @@
-// commonTest/kotlin/com/github/alsaghir/pokerplanning/presentation/model/ThemeViewModelTest.kt
 package com.github.alsaghir.pokerplanning.presentation.model
 
 import androidx.compose.ui.graphics.Color
@@ -197,6 +196,31 @@ class ThemeViewModelTest {
             // StateFlow always replays the last value immediately
             assertIs<DataState.Success<ThemeDto>>(awaitItem())
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `loadTheme failure sets Error state and emits ShowMessage`() = runTest {
+        fakeRepo.getThemeShouldThrow = true
+        val failingViewModel = ThemeViewModel(fakeRepo)
+
+        turbineScope {
+            val stateTurbine = failingViewModel.themeState.testIn(backgroundScope)
+            val eventTurbine = failingViewModel.events.testIn(backgroundScope)
+
+            assertIs<DataState.Loading>(stateTurbine.awaitItem())
+
+            advanceUntilIdle()
+
+            val errorState = stateTurbine.awaitItem()
+            assertIs<DataState.Error>(errorState)
+
+            val event = eventTurbine.awaitItem()
+            assertIs<UiEvent.ShowMessage>(event)
+            assertContains(event.event.message, "Simulated theme loading failure")
+
+            stateTurbine.cancelAndIgnoreRemainingEvents()
+            eventTurbine.cancelAndIgnoreRemainingEvents()
         }
     }
 

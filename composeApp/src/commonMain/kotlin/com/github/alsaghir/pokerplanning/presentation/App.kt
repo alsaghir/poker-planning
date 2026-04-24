@@ -41,8 +41,11 @@ import com.materialkolor.DynamicMaterialTheme
 import com.materialkolor.dynamiccolor.ColorSpec
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.KoinApplication
+import org.koin.compose.getKoin
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.Koin
 import org.koin.core.logger.Level
+import org.koin.core.module.Module
 import org.koin.dsl.koinConfiguration
 import pokerplanning.composeapp.generated.resources.Res
 import pokerplanning.composeapp.generated.resources.compose_multiplatform
@@ -55,21 +58,26 @@ val LocalMinWidthDp = compositionLocalOf<Int> {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App(module: Module = appModule,
+        onKoinCreated: (Koin) -> Unit = {}) {
 
     KoinApplication(configuration = koinConfiguration {
 
 
-        modules(appModule)
+        modules(module)
         printLogger(Level.INFO)
 
 
     }) {
 
+        onKoinCreated(getKoin())
+
         val themeViewModel: ThemeViewModel = koinViewModel<ThemeViewModel>()
 
         val windowAdaptiveInfo = currentWindowAdaptiveInfo()
         val windowSizeClass = windowAdaptiveInfo.windowSizeClass
+        // remember is caching that survives recomposition
+        //rememberSaveable is caching that survives recomposition and process death (e.g. configuration changes)
         val widthDp = remember(windowSizeClass.minWidthDp) { windowSizeClass.minWidthDp }
 
 

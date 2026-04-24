@@ -81,7 +81,7 @@ fun <E> ViewModel.launchSafe(
             block()
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Logger.e("Error launch ${e.message ?: errorMessage}", e)
             eventFlow.emit(createErrorEvent(e.message ?: errorMessage))
         }
@@ -100,7 +100,7 @@ fun <T, E> ViewModel.launchSafe(
             block()
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Logger.e("Error launch ${e.message ?: errorMessage}", e)
             stateFlow.value = DataState.Error(e)
             eventFlow.emit(createErrorEvent(e.message ?: errorMessage))

@@ -26,10 +26,9 @@ val appModule = module {
     single<Storage> { createPlatformStorage() }
 
     single<ThemeRepo> {
-        val config = get<AppConfig>()
         ThemeRepoImpl(
             storage = get(),
-            defaultColor = Color(config.defaultSeedColorValue),
+            defaultColor = Color(get<AppConfig>().defaultSeedColorValue.toInt()),
             json = get()
         )
     }

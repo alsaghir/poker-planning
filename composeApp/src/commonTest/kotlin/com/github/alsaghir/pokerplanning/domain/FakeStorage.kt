@@ -9,7 +9,7 @@ class FakeStorage : Storage {
         data[key] = value
     }
 
-    override fun remove(key: String) {
+    override suspend fun remove(key: String) {
         data.remove(key)
     }
 

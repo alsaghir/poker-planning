@@ -71,7 +71,7 @@ enum class SerializablePaletteStyle {
 }
 
 // Always handle changing of modes in that order
-// DSL = DARK > SYSTEM > LIGHT circuling back to DARK from LIGHT and so on
+// DSL = DARK > SYSTEM > LIGHT circling back to DARK from LIGHT and so on
 @Serializable
 enum class ThemeMode {
     DARK, LIGHT, SYSTEM

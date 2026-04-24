@@ -4,11 +4,14 @@ import FakeStorage
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.PaletteStyle
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 
@@ -107,5 +110,66 @@ class ThemeRepoTest {
         assertEquals(secondTheme, themeRepo.getTheme())
     }
 
+    @Test
+    fun `getTheme with malformed JSON throws serialization exception`() = runTest {
+        fakeStorage.putString(themeKey, "{ not-valid-json }")
 
+        assertFailsWith<SerializationException> {
+            themeRepo.getTheme()
+        }
+    }
+
+    @Test
+    fun `saveTheme propagates storage exception`() = runTest {
+        val failingStorage = object : Storage {
+            override fun getString(key: String): String? = null
+            override suspend fun putString(key: String, value: String) {
+                error("Disk write failed")
+            }
+
+            override suspend fun remove(key: String) = Unit
+        }
+
+        val repo = ThemeRepoImpl(
+            storage = failingStorage,
+            defaultColor = defaultColor
+        )
+
+        val ex = assertFailsWith<IllegalStateException> {
+            repo.saveTheme(ThemeDto.default(defaultColor))
+        }
+
+        assertContains(ex.message.orEmpty(), "Disk write failed")
+    }
+
+}
+
+class ThemeDtoMappingTest {
+
+    @Test
+    fun `fromColor and toColor round trip`() {
+        val dto = ThemeDto.fromColor(
+            color = Color(0xFF123456),
+            paletteStyle = PaletteStyle.Expressive,
+            mode = ThemeMode.SYSTEM
+        )
+
+        assertEquals(Color(0xFF123456), dto.toColor())
+        assertEquals(ThemeMode.SYSTEM, dto.mode)
+    }
+
+    @Test
+    fun `palette style conversion round trip for supported styles`() {
+        val supported = listOf(
+            PaletteStyle.TonalSpot,
+            PaletteStyle.Neutral,
+            PaletteStyle.Vibrant,
+            PaletteStyle.Expressive
+        )
+
+        supported.forEach { style ->
+            val serializable = SerializablePaletteStyle.fromLibraryEnum(style)
+            assertEquals(style, serializable.toLibraryEnum())
+        }
+    }
 }

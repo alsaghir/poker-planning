@@ -3,12 +3,12 @@ package com.github.alsaghir.pokerplanning.infra
 
 sealed interface AppConfig {
 
-    val defaultSeedColorValue: ULong
+    val defaultSeedColorValue: UInt
         get() = DEFAULT_SEED_COLOR_VALUE
 
     companion object {
 
-        private const val DEFAULT_SEED_COLOR_VALUE: ULong = 0xFFFF95BBu
+        private const val DEFAULT_SEED_COLOR_VALUE: UInt = 0xFFFF95BBu
 
         fun fromEnvironment(env: String): AppConfig = when (env.lowercase()) {
             "dev" -> Dev
